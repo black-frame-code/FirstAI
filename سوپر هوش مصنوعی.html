@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>چت‌بات هوشمند فارسی</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', sans-serif;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            width: 100%;
+            height: 100%;
+            color: #333;
+            line-height: 1.6;
+            padding-bottom: 110px;
+            overflow-x: hidden;
+            background: hsl(0deg 0% 15%);
+        }
+
+        .chat-container {
+            width: 90%;
+            margin: 20px auto 20px;
+            max-width: 870px;
+            padding: 0;
+        }
+
+        .message {
+            display: flex;
+            margin: 15px 0;
+            animation: msgAnim .3s ease;
+        }
+
+        .message.user {
+            justify-content: flex-start;
+        }
+
+        .message.user .bubble {
+            border-bottom-right-radius: 5px;
+        }
+
+        .message.bot {
+            justify-content: flex-end;
+        }
+
+        .message.bot .bubble {
+            border-bottom-left-radius: 5px;
+            max-width: 85%;
+        }
+
+        .bubble,
+        .code-box {
+            max-width: 70%;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            word-break: break-word;
+            position: relative;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            animation: fadeInGlow 1s ease-out;
+            background: rgb(0 0 0 / 0%);
+            border: 2px solid rgb(255 255 255 / 25%);
+            backdrop-filter: blur(25px);
+            text-shadow: 0 0 10px #000000;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .code-box {
+            width: fit-content;
+            margin-top: 15px;
+            align-items: center;
+        }
+
+        .bubble .bubble {
+            animation: none;
+        }
+
+        .bubble.thinking {
+            background: #e2e8f0;
+            font-style: italic;
+            color: #718096;
+        }
+
+        .time,
+        .code {
+            font-size: .75rem;
+            opacity: 0.7;
+            margin-top: 5px;
+        }
+
+        .code {
+            border-top: 2px solid rgb(255 255 255 / 40%);
+            padding-top: 5px;
+        }
+
+        .time a {
+            color: #ffffff;
+        }
+
+        .input-container {
+            position: fixed;
+            bottom: 10px;
+            left: 0px;
+            right: 0px;
+            width: 90%;
+            padding: 15px 25px;
+            box-shadow: 0 -4px 20px rgb(0 0 0 / 10%);
+            z-index: 100;
+            backdrop-filter: blur(25px);
+            animation: fadeInGlow 1s ease-out;
+            border-radius: 1.8rem;
+            max-width: 870px;
+            border: 2px solid rgb(255 255 255 / 25%);
+            margin: auto;
+            display: flex;
+            gap: 10px;
+            flex-direction: row;
+            justify-content: center;
+        }
+
+        .div-box {
+            display: flex;
+            gap: 10px;
+            flex-direction: row;
+            justify-content: center;
+            flex-wrap: wrap;
+            border-top: 2px solid rgb(255 255 255 / 25%);
+            padding-top: 10px;
+            margin-top: 10px;
+        }
+
+        .bubble::before,
+        .input-container::before {
+            content: "";
+            position: absolute;
+            inset: -5px;
+            border-radius: calc(1.8rem + 5px);
+            background: linear-gradient(135deg, hwb(158deg 0% 75% / 50%), hwb(0deg 0% 75% / 50%));
+            z-index: -1;
+            filter: blur(10px);
+        }
+
+        .bubble::before {
+            background: linear-gradient(135deg, hwb(0deg 0% 100% / 75%), hwb(0deg 0% 100% / 85%), hwb(0deg 0% 100% / 75%));
+        }
+
+        @keyframes fadeInGlow {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        #userInput {
+            flex: 1;
+            padding: 14px 20px;
+            background: rgb(255 255 255 / 10%);
+            border: 2px solid rgba(255, 255, 255, 0.25);
+            box-shadow: 0 0 20px rgb(0 0 0 / 10%);
+            min-width: 60%;
+            max-width: 600px;
+            border-radius: 0 50px 50px 50px;
+            font-size: 1rem;
+            outline: none;
+            transition: all .3s;
+            color: white;
+        }
+
+        #userInput:focus,
+        .button:focus {
+            border-color: #ffffff;
+        }
+
+        .button {
+            background: rgb(255 255 255 / 20%);
+            border: 2px solid rgba(255, 255, 255, 0.25);
+            box-shadow: 0 0 20px rgb(0 0 0 / 10%);
+            border: 2px solid rgba(255, 255, 255, 0.25);
+            color: #fff;
+            width: 55px;
+            height: 55px;
+            border-radius: 50% 0% 50% 50%;
+            cursor: pointer;
+            font-size: 1.3rem;
+            transition: all .3s;
+        }
+
+        .button:hover {
+            transform: scale(1.05);
+        }
+
+        #userInput:active,
+        .button:active {
+            transform: scale(.97);
+            border-color: rgba(255, 255, 255, 0.5);
+            box-shadow: 0 0 10px rgb(0 0 0 / 85%);
+        }
+
+        .typing-cursor {
+            display: inline-block;
+            width: 8px;
+            height: 16px;
+            background: #667eea;
+            margin-left: 3px;
+            animation: blink .6s infinite;
+        }
+
+        @keyframes msgAnim {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0;
+            }
+        }
+
+        .loading {
+            position: fixed;
+            inset: 0;
+            background: #111;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+
+        .loading.hide {
+            opacity: 0;
+            visibility: hidden;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="loading" id="loader">
+        <h1>Loading</h1>
+    </div>
+    <div class="chat-container">
+        <div class="bubble">
+            تعداد مکالمات فعلی:
+            <div id="totalConv"></div>
+            تعداد الگو های کشف شده:
+            <div id="patterns"></div>
+            تعداد هم معنی‌ها و واژگان یاد گرفته شده:
+            <div id="vocab"></div>
+            درصد قدرت
+            <div id="accuracy"></div>
+            <div class="div-box">
+                <button class="bubble" id="clearMessagesBtn">🧹 پاک کردن پیام‌ها</button>
+                <button class="bubble" id="toggleLearnBtn">✅ یادگیری فعال</button>
+                <button class="bubble" id="clearLearnBtn">🧹 پاک کردن آموزش‌ها</button>
+            </div>
+        </div>
+    </div>
+    <div class="chat-container" id="chatContainer">
+    </div>
+    </div>
+    <div class="input-container">
+        <input type="text" id="userInput" placeholder="پیام خود را بنویسید..." autocomplete="off">
+        <button id="sendBtn" class="button">➤</button>
+    </div>
+    <script>
+        const loader = document.getElementById("loader");
+        const minDisplayTime = 1000;
+        const fadeDuration = 500;
+        const startTime = Date.now();
+
+        window.addEventListener("load", () => {
+            const elapsed = Date.now() - startTime;
+            const remaining = Math.max(0, minDisplayTime - elapsed);
+
+            setTimeout(() => {
+                loader.classList.add("hide");
+
+                setTimeout(() => {
+                    loader.remove();
+                }, fadeDuration);
+            }, remaining);
+        });
+    </script>
+    <script defer>
+        const $ = id => document.getElementById(id);
+        const LS = {
+            get(k) {
+                try { return JSON.parse(localStorage.getItem(k)) } catch (e) { return null }
+            },
+            set(k, v) { localStorage.setItem(k, JSON.stringify(v)) }
+        };
+
+        class ChatBot {
+            constructor() {
+                this.convs = LS.get('chatbot_convs') || [];
+                this.data = LS.get('chatbot_data') || {
+                    patterns: {},
+                    convPatterns: []
+                };
+                this.enabled = LS.get('chatbot_enabled') !== false;
+                this.defaults = this.getDefaults();
+                this.updateStats();
+                this.loadChats();
+            }
+
+            getDefaults() {
+                return [
+  { q: ['سلام', 'درود', 'وقت بخیر', 'سلام علیکم', 'سلام بچه ها'], a: 'سلام! خوش اومدی 😊 چطور می‌تونم کمکت کنم؟ اگه بگی دنبال چه کاری هستی (مثلاً نوشتن متن، ترجمه، ایده، برنامه‌ریزی، حل سوال، یا راهنمایی عمومی)، دقیق‌تر راهنمایی‌ات می‌کنم.' },
+  { q: ['سلام حالت چطوره', 'چطوری', 'خوبی'], a: 'مرسی که پرسیدی! من خوبم 😊 تو چطوری؟ بگو امروز دوست داری درباره چی صحبت کنیم یا چه کمکی ازم برمیاد؟' },
+  { q: ['حال میکنی', 'حال و احوال', 'حال و خوبی'], a: 'آره حالم خوبه 😊 حالا بگو چه کمکی لازم داری؟ می‌تونی موضوع رو خیلی کوتاه بگی تا سریع شروع کنیم.' },
+  { q: ['بیا شروع کنیم', 'شروع کن', 'ادامه بده'], a: 'حتماً! آماده‌ام. فقط موضوعت رو بگو: چی می‌خوای بسازیم/حل کنیم/بنویسیم/فهم کنیم؟ اگر هم چند گزینه داری، همون‌ها رو لیست کن.' },
+  { q: ['کمکم کن', 'کمک', 'کمک میخوام', 'لطفا کمک'], a: 'حتماً. مشکل یا سوالت چیه؟ اگر می‌تونی این ۳ مورد رو هم بگو: 1) هدفت چیه؟ 2) الان چی داری؟ 3) تا کجا پیش رفتی؟' },
+
+  { q: ['خداحافظ', 'فعلا', 'بدرود', 'مرسی خداحافظ'], a: 'خدانگهدار! خوشحالم که کمک کردم 😊 هر وقت دوباره سوال داشتی، من در خدمتم.' },
+  { q: ['می‌رم', 'دارم میرم', 'فعلا میام', 'بعدا میبینمت'], a: 'چشم 😊 هر وقت برگشتی در خدمتت هستم. امیدوارم روز خوبی داشته باشی.' },
+
+  { q: ['ممنون', 'متشکرم', 'سپاس'], a: 'خواهش می‌کنم 😊 خیلی خوشحالم که مفید بودم. اگر دوست داشتی، بگو برای ادامه چه کمکی لازم داری.' },
+  { q: ['مرسی خیلی', 'خیلی ممنون'], a: 'قربانت! خوشحالم که جواب داد 😊 اگر سوال دیگه‌ای هم داری، همینجا بپرس.' },
+  { q: ['دمت گرم', 'دمت گرم'], a: 'اگه کمک کردم خوشحال شدم 😊 حالا بگو چه موضوعی مدنظرت هست؟' },
+
+  { q: ['نامت چیه', 'تو کی هستی', 'اسم شما'], a: 'من یک دستیار هوش مصنوعی هستم و اینجا برای کمک به سوالات و کارهای روزمره در خدمتت هستم 😊 اگر بگی دقیقاً چی می‌خوای، همون رو انجام می‌دم.' },
+  { q: ['چی هستی', 'تو چه کاری انجام میدی'], a: 'من می‌تونم بهت کمک کنم در: نوشتن متن، ایده‌پردازی، توضیح مفاهیم، خلاصه‌سازی، ترجمه، پاسخ به سوال‌های عمومی، ساخت قالب پیام، و حتی برنامه‌ریزی ساده برای کارها. فقط بگو دنبال چه چیزی هستی.' },
+
+  { q: ['سوال دارم', 'می‌پرسم', 'یه سوال'], a: 'حتماً. سوالت رو بپرس 😊 اگه جزئیات بیشتری بدی (هدف، محدودیت‌ها، نمونه)، جواب دقیق‌تر و کامل‌تر می‌دم.' },
+  { q: ['جواب بده', 'پاسخ', 'راهنمایی کن'], a: 'حتماً. لطفاً سوال/درخواستت رو کامل بنویس. اگر موضوع پیچیده است، بگو چه بخشی برات مبهمه تا دقیق همون بخش رو باز کنم.' },
+
+  { q: ['عجیبه', 'نمی‌فهمم', 'متوجه نشدم'], a: 'اشکالی نداره 😊 دوباره و ساده‌تر توضیح می‌دم. اول بگو دقیقاً کدوم قسمت رو متوجه نشدی؟ بعد از اون، یک مثال هم می‌زنم تا کاملاً جا بیفته.' },
+  { q: ['ساده‌ترش کن', 'خلاصه کن', 'کوتاه کن'], a: 'حتماً. می‌خوای خیلی خلاصه بگم یا با مثال؟ بگو کدوم سبک رو ترجیح می‌دی: ۱) تیترهای کوتاه، ۲) توضیح مرحله‌به‌مرحله، یا ۳) مثال واقعی.' },
+  { q: ['جزئیات بیشتر', 'تفصیل بده'], a: 'حتماً. بگو درباره کدوم بخش جزئیات می‌خوای (تعاریف، روش انجام، مثال، نکات مهم، یا خطاهای رایج) تا همون‌ها رو مفصل‌تر کنم.' },
+
+  { q: ['مثال بزن', 'نمونه', 'یه نمونه'], a: 'حتماً 😊 چند نمونه می‌زنم تا بهتر بفهمی. موضوعت چیه؟ اگر بگی درباره چه موردی مثال می‌خوای، دقیقاً همون زمینه رو مثال می‌زنم.' },
+  { q: ['نمونه متن', 'نمونه جواب', 'نمونه پیام'], a: 'حتماً. برای اینکه بهترین متن رو بسازم، لطفاً بگو: 1) موضوع پیام چیه؟ 2) لحن رسمی/صمیمی؟ 3) مخاطب کیه؟ 4) هدف پیام (درخواست/اطلاع/دعوت/تشکر)؟' },
+
+  { q: ['ترجمه کن', 'translate', 'ترجمه فارسی', 'ترجمه انگلیسی'], a: 'حتماً. متنت رو بفرست و بگو ترجمه رو به کدوم زبان می‌خوای. همچنین اگر لحن خاصی مدنظرت هست (رسمی/محاوره‌ای/ادبی)، بگو تا مطابق همون ترجمه کنم.' },
+  { q: ['متن رو بهتر کن', 'ویرایش کن', 'ادیت کن'], a: 'حتماً 😊 متن رو بفرست. بگو: 1) رسمی می‌خوای یا خودمونی؟ 2) کوتاه‌تر یا دقیق‌تر؟ 3) مخاطب کیه؟ بعد نسخه‌ی اصلاح‌شده و (اگر خواستی) چند جایگزین هم می‌دم.' },
+
+  { q: ['خلاصه کن', 'خلاصه مطلب', 'جمع‌بندی'], a: 'حتماً. متن/محتوا رو بفرست. بعد: ۱) خلاصه خیلی کوتاه، ۲) خلاصه با نکات کلیدی، و اگر خواستی ۳) نکات اقدام‌محور (چه کار باید کرد) رو هم می‌تونم آماده کنم.' },
+  { q: ['جمع بندی کن', 'سخن آخر', 'نتیجه چی میشه'], a: 'چشم. اول بگو موضوع یا متن چی هست. بعد جمع‌بندی رو با چند بولت کلیدی و یک نتیجه روشن ارائه می‌دم.' },
+
+  { q: ['ایده بده', 'پیشنهاد بده', 'Idea'], a: 'حتماً 😊 موضوع رو بگو (مثلاً برای محتوا، کسب‌وکار، پروژه، جمله/متن، یا تصمیم‌گیری). بعد چند ایده متفاوت با مزایا و پیشنهاد اجرای هرکدوم می‌دم.' },
+
+  { q: ['برنامه‌ریزی کن', 'زمان‌بندی', 'برنامه'], a: 'حتماً. بگو چه کاری و برای چه مدت (مثلاً یک هفته/یک ماه) می‌خوای انجام بدی. همچنین محدودیت‌ها (ساعت‌ها، اولویت‌ها) رو بگو تا برنامه‌ی واقع‌بینانه بچینم.' },
+  { q: ['طرح درس', 'برنامه آموزشی', 'پلن مطالعه'], a: 'حتماً. هدف یادگیری رو بگو (مثلاً زبان/امتحان/مهارت خاص) و سطح فعلی چیه. سپس یک برنامه مرحله‌ای با زمان‌بندی، منابع پیشنهادی، تمرین و پیگیری می‌چینم.' },
+
+  { q: ['چطور شروع کنم', 'از کجا شروع کنم', 'begin'], a: 'برای شروع، اول هدف رو دقیق کنیم. لطفاً بگو هدفت چیه و الان چه شرایطی داری. بعد من یک مسیر کوتاه از «گام اول» تا «نتیجه قابل اندازه‌گیری» پیشنهاد می‌دم.' },
+  { q: ['گام به گام', 'مرحله به مرحله', 'روش انجام'], a: 'حتماً مرحله‌به‌مرحله توضیح می‌دم 😊 فقط بگو موضوع دقیقا چیه (مثلاً نوشتن رزومه، تحقیق، تمرین، مکالمه، یا حل یک مسئله).' },
+
+  { q: ['نکته مهم', 'توصیه', 'راهنمایی'], a: 'حتماً. بگو درباره چه چیزی نکته می‌خوای؟ اگر بگی سناریوت چیه (هدف، مخاطب، زمان)، توصیه‌ها دقیق و کاربردی می‌شن.' },
+
+  { q: ['کد', 'برنامه نویسی', 'پایتون', 'جاوااسکریپت'], a: 'حتماً. اگر سوال برنامه‌نویسی داری، کد یا توضیح مسئله رو بفرست. بگو زبان چی هست، ورودی/خروجی چی باید باشه، و خطا یا رفتار فعلی چیه.' },
+  { q: ['باگ دارم', 'خطا میده', 'error'], a: 'حتماً کمک می‌کنم. متن خطا (کپی دقیق) رو بفرست و بگو از کجا شروع کردی و انتظار داشتی چه اتفاقی بیفته.' },
+
+  { q: ['چی کار کنم', 'help me', 'راهنما'], a: 'حتماً. شرایط رو تو چند خط بگو: چه چیزی می‌خوای، الان چی هست، و چه محدودیت‌هایی داری. بعد دقیقاً می‌گم چه کار کنی.' },
+
+  { q: ['ساده توضیح بده', 'واضح بگو'], a: 'حتماً. یک توضیح ساده + یک مثال کوتاه می‌دم تا سریع واضح بشه. موضوعت چیه؟' },
+  // 1
+  {
+    q: ['ساعت چنده', 'الان ساعت چنده', 'وقت چند است'],
+    a: () => {
+      const t = new Date().toLocaleTimeString('fa-IR');
+      return `الان ساعت ${t} است.\n\nاین مقدار با استفاده از قابلیت تبدیل تاریخ/زمان جاوااسکریپت به فرمت محلیِ فارسی محاسبه شده است. اگر مرورگرتان زبان/منطقه را تغییر دهد، ممکن است فرمت نمایشی کمی فرق کند، اما زمان واقعی همان زمان سیستم کاربر است.`;
+    }
+  },
+  // 2
+  {
+    q: ['تاریخ امروز چیه', 'امروز چه تاریخی است', 'چندم هستیم'],
+    a: () => {
+      const d = new Date().toLocaleDateString('fa-IR');
+      return `امروز تاریخ ${d} است.\n\nاین تاریخ از روی تاریخ سیستم دستگاه شما گرفته می‌شود و با فرمت فارسی (fa-IR) نمایش داده شده است. اگر دستگاه شما روی تقویم/منطقه متفاوت تنظیم شده باشد، ممکن است نحوه نمایش کمی تغییر کند.`;
+    }
+  },
+  // 3
+  {
+    q: ['روز هفته امروز', 'امروز چه روزی است', 'روز چندم هفته است'],
+    a: () => {
+      const w = new Date().toLocaleDateString('fa-IR', { weekday: 'long' });
+      return `امروز ${w} است.\n\nاین عبارت بر اساس نام روز هفته در خروجی محلیِ فارسی ساخته شده است و به همین دلیل می‌تواند با زبان/لوکال دستگاه هم‌خوان باشد.`;
+    }
+  },
+  // 4
+  {
+    q: ['تایم زونت چیه', 'منطقه زمانی چیه', 'ساعت محلی بر چه مبناییه'],
+    a: () => {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const off = -new Date().getTimezoneOffset() / 60;
+      return `منطقه زمانی مرورگر/سیستم شما: ${tz ?? 'نامشخص'}.\n\nاختلاف زمانی (تقریبی) نسبت به UTC: ${off >= 0 ? '+' : ''}${off} ساعت.\n\nتوجه: این مقدار ممکن است با توجه به تنظیمات سیستم کاربر دقیق باشد.`;
+    }
+  },
+  // 5
+  {
+    q: ['زبان مرورگر', 'زبان سیستم چیه', 'کاربر چه زبانی داره'],
+    a: () => {
+      const lang = navigator.language || 'نامشخص';
+      const langs = navigator.languages ? navigator.languages.join(', ') : '';
+      return `زبان فعلی مرورگر: ${lang}.\n\nلیست زبان‌های ترجیحی (در صورت وجود): ${langs || 'نامشخص'}.\n\nاین اطلاعات از ویژگی‌های استاندارد مرورگر گرفته می‌شود و برای تشخیص نمایش محتوا (i18n) مفید است.`;
+    }
+  },
+  // 6
+  {
+    q: ['زبان مرورگر به انگلیسی چیه', 'locale چیه', 'لوکال سیستم چیه'],
+    a: () => {
+      const loc = navigator.language || 'نامشخص';
+      return `لوکال (Locale) مرورگر شما: ${loc}.\n\nاین همان زبانی است که مرورگر برای قالب‌بندی تاریخ/عدد و زبان رابط کاربری در نظر می‌گیرد. اگر بخواهید می‌توانید با همان مقدار، قالب نمایش را هماهنگ کنید.`;
+    }
+  },
+  // 7
+  {
+    q: ['عرض صفحه چقدره', 'width چند است', 'طول/عرض صفحه'],
+    a: () => {
+      const w = window.innerWidth;
+      return `عرض پنجره (viewport) شما: ${w} پیکسل.\n\nاین عدد معمولاً اندازه‌ی قابل‌مشاهده‌ی صفحه در لحظه را نشان می‌دهد و ممکن است با تغییر سایز پنجره یا موبایل/دسکتاپ متفاوت شود.`;
+    }
+  },
+  // 8
+  {
+    q: ['ارتفاع صفحه چقدره', 'height چند است', 'بلندی صفحه'],
+    a: () => {
+      const h = window.innerHeight;
+      return `ارتفاع پنجره (viewport) شما: ${h} پیکسل.\n\nاین عدد با توجه به ارتفاع ناحیه قابل‌نمایش (نه کل صفحه HTML) محاسبه می‌شود و در موبایل ممکن است با نمایش/عدم نمایش نوارها تغییر کند.`;
+    }
+  },
+  // 9
+  {
+    q: ['رزولوشن صفحه', 'صفحه چند پیکسله', 'عرض و ارتفاع صفحه'],
+    a: () => {
+      const sw = screen.width;
+      const sh = screen.height;
+      const aw = screen.availWidth;
+      const ah = screen.availHeight;
+      const dpr = window.devicePixelRatio || 1;
+      return `رزولوشن فیزیکی صفحه: ${sw}×${sh}.\n\nفضای قابل‌استفاده (Available): ${aw}×${ah}.\n\nنسبت پیکسل (Device Pixel Ratio): ${dpr}.\n\nاین‌ها برای طراحی ریسپانسیو و تطبیق با نمایشگرهای مختلف (موبایل/رتینا) مهم‌اند.`;
+    }
+  },
+  // 10
+  {
+    q: ['dpr چنده', 'device pixel ratio', 'پیکسل نسبت چیه'],
+    a: () => {
+      const dpr = window.devicePixelRatio || 1;
+      return `Device Pixel Ratio شما: ${dpr}.\n\nاین نشان می‌دهد هر پیکسل CSS در چند پیکسل واقعی نمایشگر (فیزیکی) ضرب می‌شود. برای کیفیت بهتر تصاویر (مثلاً انتخاب اندازه مناسب asset) مفید است.`;
+    }
+  },
+  // 11
+  {
+    q: ['نوع مرورگر چیه', 'اسم مرورگر چیه', 'user agent چیه'],
+    a: () => {
+      const ua = navigator.userAgent || 'نامشخص';
+      return `User-Agent مرورگر شما:\n${ua}\n\nاین رشته شامل اطلاعاتی درباره سیستم، موتور مرورگر و نسخه‌هاست. برای تشخیص‌های عمومی (مثلاً سازگاری) استفاده می‌شود، اما تشخیص دقیق همیشه قطعی نیست.`;
+    }
+  },
+  // 12
+  {
+    q: ['پلتفرمت چیه', 'سیستم عامل چیه', 'OS چی هست'],
+    a: () => {
+      const plat = navigator.platform || 'نامشخص';
+      return `platform (اطلاعات کلی سیستم): ${plat}.\n\nاین مقدار در برخی مرورگرها ممکن است محدودتر یا خالی باشد. اگر نیاز به تشخیص دقیق‌تر دارید، معمولاً از userAgent یا Client Hints استفاده می‌شود (ولی اینجا فقط اطلاعات استاندارد قابل دسترس را می‌خوانیم).`;
+    }
+  },
+  // 13
+  {
+    q: ['آیا موبایل هستم', 'موبایل هستم یا نه', 'دستگاه چیه'],
+    a: () => {
+      const ua = navigator.userAgent || '';
+      const isMobile =
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua) ||
+        (window.innerWidth <= 768);
+      return `تشخیص اولیه دستگاه:\n- موبایل: ${isMobile ? 'بله' : 'خیر'}\n\nاین تشخیص ترکیبی از بررسی User-Agent و اندازه viewport است. این روش ۱۰۰٪ دقیق نیست، اما برای تجربه کاربری اغلب کافی است.`;
+    }
+  },
+  // 17
+  {
+    q: ['آیا سیستم تیره هست', 'dark mode روشنه', 'prefers color scheme چیه'],
+    a: () => {
+      const isDark = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)').matches : false;
+      return `ترجیح رنگ سیستم:\n- حالت تیره (dark): ${isDark ? 'فعال است' : 'غیرفعال است'}\n\nاین مقدار به تنظیمات سیستم کاربر وابسته است. معمولاً برای هماهنگ‌سازی تم سایت با OS استفاده می‌شود.`;
+    }
+  },
+  // 18
+  {
+    q: ['آیا کاربر ترجیح میده فونت بزرگ باشه', 'prefers reduced motion', 'کاهش انیمیشن؟'],
+    a: () => {
+      const reduceMotion = window.matchMedia
+        ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        : false;
+      return `ترجیح سیستم درباره حرکت:\n- reduced motion: ${reduceMotion ? 'فعال' : 'غیرفعال'}\n\nاین گزینه از OS/مرورگر کاربر می‌آید و برای کاهش انیمیشن‌ها و بهبود دسترس‌پذیری است.`;
+    }
+  },
+
+  // 19
+  {
+    q: ['آیا کاربر نور زیاد می‌خواهد', 'prefers contrast', 'کنتراست بیشتر؟'],
+    a: () => {
+      const highContrast = window.matchMedia
+        ? window.matchMedia('(prefers-contrast: more)').matches
+        : false;
+      return `ترجیح کنتراست سیستم:\n- prefers contrast: more => ${highContrast ? 'بله' : 'خیر'}\n\nاین برای تطبیق بهتر با نیازهای بینایی و دسترس‌پذیری است.`;
+    }
+  },
+
+  // 20
+  {
+    q: ['موقعیت جغرافیایی دارم؟', 'آیا اجازه لوکیشن دارم', 'geolocation موجوده؟'],
+    a: () => {
+      const ok = !!navigator.geolocation;
+      return `Geolocation در این مرورگر:\n- پشتیبانی: ${ok ? 'بله' : 'خیر'}\n\nبرای گرفتن موقعیت واقعی باید کاربر اجازه بدهد؛ اینجا فقط “قابلیت” بررسی شده است.`;
+    }
+  },
+
+  // 21
+  {
+    q: ['رزولوشن رنگ', 'color depth چند است', 'چند بیت رنگ دارم'],
+    a: () => {
+      const cd = screen.colorDepth ?? 'نامشخص';
+      return `Color depth (عمق رنگ): ${cd}.\n\nبرای برخی استراتژی‌های رندر و رسانه‌ها (نه همیشه) مفید است.`;
+    }
+  },
+
+  // 22
+  {
+    q: ['عمق پیکسل', 'pixel depth چند است', 'چند بیت هست'],
+    a: () => {
+      const pd = screen.pixelDepth ?? 'نامشخص';
+      return `Pixel depth: ${pd}.\n\nگاهی با colorDepth فرق دارد؛ هر دو برای اطلاعات نمایشی استفاده می‌شوند.`;
+    }
+  },
+
+  // 23
+  {
+    q: ['آیا clipboard پشتیبانی میشه', 'clipboard چی هست', 'کپی پیست میشه؟'],
+    a: () => {
+      const hasClipboard = !!navigator.clipboard;
+      return `Clipboard API:\n- پشتیبانی: ${hasClipboard ? 'بله' : 'خیر'}\n\nاین فقط وجود API را نشان می‌دهد؛ دسترسی واقعی به مجوزهای مرورگر وابسته است.`;
+    }
+  },
+
+  // 24
+  {
+    q: ['زبان ترجمه‌پذیر سیستم چیه', 'timezone ساعت چند', 'timezone؟'],
+    a: () => {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      return `Time zone (از Intl): ${tz ?? 'نامشخص'}.\n\nبرای زمان‌بندی و نمایش تاریخ/ساعت دقیق نسبت به لوکال مفید است.`;
+    }
+  },
+
+  // 25
+  {
+    q: ['آیا اعلان پشتیبانی میشه', 'notifications دارم', 'Notification API'],
+    a: () => {
+      const supported = 'Notification' in window;
+      return `Notification API:\n- پشتیبانی: ${supported ? 'بله' : 'خیر'}\n\nدر صورت پشتیبانی، وضعیت دقیق permission هنوز ممکن است “اجازه نداده‌باشد”.`;
+    }
+  },
+
+  // 26
+  {
+    q: ['اجازه نوتیفیکیشن دارم', 'permission چیه', 'Notifications permission'],
+    a: () => {
+      if (!('Notification' in window)) return `Notification API پشتیبانی نمی‌شود.`;
+      return `Permission نوتیفیکیشن:\n- ${Notification.permission}\n\nمقادیر رایج: default / granted / denied.`;
+    }
+  },
+
+  // 27
+  {
+    q: ['کیبورد داره یا نه', 'آیا تایپ با کیبورد ممکنه', 'pointer/keyboard'],
+    a: () => {
+      const anyCoarsePointer = window.matchMedia
+        ? window.matchMedia('(pointer: coarse)').matches
+        : false;
+      return `نوع تعامل احتمالی:\n- pointer:coarse => ${anyCoarsePointer ? 'بله' : 'خیر'}\n\nاین فقط تخمین از قابلیت تعامل دستگاه است.`;
+    }
+  },
+
+  // 28
+  {
+    q: ['آیا پنجره در فوکوسه', 'focus دارم', 'صفحه فعال؟'],
+    a: () => {
+      return `وضعیت focus:\n- document.hasFocus(): ${document.hasFocus() ? 'بله' : 'خیر'}\n\nبرای تصمیم‌های UI مثل pause/resume مناسب است.`;
+    }
+  },
+
+  // 29
+  {
+    q: ['صفحه آنلاین هست', 'internet وصله', 'navigator onLine'],
+    a: () => {
+      return `وضعیت اتصال:\n- navigator.onLine: ${navigator.onLine ? 'آنلاین' : 'آفلاین'}\n\nاین همیشه ۱۰۰٪ دقیق نیست (مثلاً ممکن است اتصال واقعی اینترنت نباشد).`;
+    }
+  },
+
+  // 30
+  {
+    q: ['دیتای کاربر (save-data) فعاله؟', 'prefers-reduced-data', 'کم‌مصرف؟'],
+    a: () => {
+      const saveData = navigator.connection && typeof navigator.connection.saveData === 'boolean'
+        ? navigator.connection.saveData
+        : null;
+      return `حالت Save-Data:\n- navigator.connection.saveData: ${saveData === null ? 'نامشخص' : (saveData ? 'فعال' : 'غیرفعال')}\n\nدر صورت پشتیبانی، برای کاهش مصرف داده مفید است.`;
+    }
+  },
+
+  // 31
+  {
+    q: ['سرعت اینترنت چقدره', 'network downlink', 'effective type؟'],
+    a: () => {
+      const c = navigator.connection;
+      if (!c) return `navigator.connection در این مرورگر پشتیبانی نمی‌شود.`;
+      const info = [
+        `downlink: ${c.downlink ?? 'نامشخص'} Mbps`,
+        `effectiveType: ${c.effectiveType ?? 'نامشخص'}`,
+        `rtt: ${c.rtt ?? 'نامشخص'} ms`,
+        `saveData: ${typeof c.saveData === 'boolean' ? (c.saveData ? 'true' : 'false') : 'نامشخص'}`
+      ].join('\n');
+      return `اطلاعات شبکه (Network Information API):\n${info}`;
+    }
+  },
+
+  // 32
+  {
+    q: ['آیا مرورگر از service worker پشتیبانی می‌کنه', 'serviceWorker', 'SW؟'],
+    a: () => {
+      return `Service Worker:\n- پشتیبانی: ${'serviceWorker' in navigator ? 'بله' : 'خیر'}\n\nبرای کش و قابلیت‌های PWA استفاده می‌شود.`;
+    }
+  },
+
+  // 33
+  {
+    q: ['آیا localStorage هست', 'localStorage دارم', 'ذخیره‌سازی'],
+    a: () => {
+      const ok = !!window.localStorage;
+      return `localStorage:\n- پشتیبانی: ${ok ? 'بله' : 'خیر'}\n\nاگر در حالت خصوصی/سیاست مرورگر محدود باشد ممکن است خطا بدهد.`;
+    }
+  },
+
+  // 34
+  {
+    q: ['آیا sessionStorage هست', 'sessionStorage دارم', 'ذخیره موقت؟'],
+    a: () => {
+      const ok = !!window.sessionStorage;
+      return `sessionStorage:\n- پشتیبانی: ${ok ? 'بله' : 'خیر'}\n\nبرای داده‌های موقت تا بسته شدن تب استفاده می‌شود.`;
+    }
+  },
+
+  // 35
+  {
+    q: ['اندازه تقریبی حافظه دستگاه', 'storage estimate', 'ظرفیت ذخیره؟'],
+    a: async () => {
+      if (!('storage' in navigator) || !('estimate' in navigator.storage)) {
+        return `Storage estimate در این مرورگر پشتیبانی نمی‌شود.`;
+      }
+      const est = await navigator.storage.estimate();
+      return `تقریبی حافظه:\n- quota: ${est.quota ?? 'نامشخص'} bytes\n- usage: ${est.usage ?? 'نامشخص'} bytes\n\nاین تخمین است و ممکن است محدودیت‌های مرورگر اثر بگذارد.`;
+    }
+  },
+
+  // 36
+  {
+    q: ['آیا تاریخچه مرورگر دارم', 'history طولانیه', 'history؟'],
+    a: () => {
+      const len = history.length;
+      return `تعداد ورودی‌های history در این سشن: ${len}.\n\nاین مقدار برای تشخیص تجربه ناوبری استفاده می‌شود و واقعیات دقیق “کل تاریخچه” نیست.`;
+    }
+  },
+
+  // 37
+  {
+    q: ['آیا geolocation اجازه می‌گیره', 'getCurrentPosition', 'لوکیشن با اجازه؟'],
+    a: () => {
+      const ok = !!navigator.geolocation;
+      return `برای گرفتن موقعیت:\n- پشتیبانی geolocation: ${ok ? 'بله' : 'خیر'}\n\nاجازه گرفتن از کاربر جداگانه انجام می‌شود (اینجا بررسی می‌کند فقط قابلیت هست یا نه).`;
+    }
+  },
+
+  // 38
+  {
+    q: ['آیا Web Audio پشتیبانی میشه', 'audio context', 'webaudio؟'],
+    a: () => {
+      const ok = !!(window.AudioContext || window.webkitAudioContext);
+      return `Web Audio API:\n- پشتیبانی: ${ok ? 'بله' : 'خیر'}\n\nبرای ساخت صدا/ویژوالایزر و امکانات صوتی استفاده می‌شود.`;
+    }
+  },
+                    { q: ['xss چیست', 'آموزش xss', 'جلوگیری از xss'], a: `XSS نوعی آسیب‌پذیری تزریق اسکریپت در صفحات وب است. برای پیشگیری، داده‌های کاربر را escape کنید.<pre class="code-box">XSS:<code class="code">element.textContent = userInput;</code></pre>` }
+                ];
+            }
+
+
+            normalizePersian(text) {
+                return text
+                    .replace(/[يىئ]/g, 'ی')
+                    .replace(/[ك]/g, 'ک')
+                    .replace(/[ۀة]/g, 'ه')
+                    .replace(/[إأٱآ]/g, 'ا')
+                    .replace(/[ؤ]/g, 'و')
+                    .replace(/[ًٌٍَُِّ]/g, '')
+                    .replace(/[ـ]/g, '')
+                    .trim();
+            }
+
+            preprocess(t) {
+                return t.trim().toLowerCase()
+                    .replace(/[،.!?;،:»«""''()\-]/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+            }
+
+            getCharNGrams(text, n) {
+                const ngrams = [];
+                const s = '\x00' + text + '\x01';
+                for (let i = 0; i <= s.length - n; i++) {
+                    ngrams.push(s.substring(i, i + n));
+                }
+                return ngrams;
+            }
+
+            getEmbedding(text) {
+                const processed = this.preprocess(text);
+                const normalized = this.normalizePersian(processed);
+                if (!normalized) return new Map();
+                const words = normalized.split(/\s+/).filter(w => w.length > 0);
+                const features = new Map();
+                words.forEach(w => {
+                    const key = 'w:' + w;
+                    features.set(key, (features.get(key) || 0) + 1);
+                });
+                const cleanText = normalized.replace(/\s+/g, '');
+                for (let n = 1; n <= 4; n++) {
+                    const ngrams = this.getCharNGrams(cleanText, n);
+                    ngrams.forEach(ng => {
+                        const key = 'c' + n + ':' + ng;
+                        features.set(key, (features.get(key) || 0) + 1);
+                    });
+                }
+                if (words.length >= 2) {
+                    for (let i = 0; i < words.length - 1; i++) {
+                        const key = 'wb:' + words[i] + '_' + words[i + 1];
+                        features.set(key, (features.get(key) || 0) + 1);
+                    }
+                }
+                for (const [key, val] of features) {
+                    if (val > 1) features.set(key, 1 + Math.log(val));
+                }
+                return features;
+            }
+
+            cosineSimilarity(vecA, vecB) {
+                if (vecA.size === 0 || vecB.size === 0) return 0;
+                let dotProduct = 0, normA = 0, normB = 0;
+                if (vecA.size <= vecB.size) {
+                    for (const [key, valA] of vecA) {
+                        normA += valA * valA;
+                        const valB = vecB.get(key);
+                        if (valB !== undefined) dotProduct += valA * valB;
+                    }
+                    for (const valB of vecB.values()) normB += valB * valB;
+                } else {
+                    for (const [key, valB] of vecB) {
+                        normB += valB * valB;
+                        const valA = vecA.get(key);
+                        if (valA !== undefined) dotProduct += valA * valB;
+                    }
+                    for (const valA of vecA.values()) normA += valA * valA;
+                }
+                if (normA === 0 || normB === 0) return 0;
+                return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+            }
+
+            similarity(a, b) {
+                const embA = this.getEmbedding(a);
+                const embB = this.getEmbedding(b);
+                return this.cosineSimilarity(embA, embB);
+            }
+
+            getDynamicThreshold(inputLength) {
+                if (inputLength <= 2) return 0.65;
+                if (inputLength <= 4) return 0.52;
+                if (inputLength <= 7) return 0.40;
+                if (inputLength <= 12) return 0.32;
+                return 0.28;
+            }
+
+            getLearnThreshold(inputLength) {
+                if (inputLength <= 2) return 0.50;
+                if (inputLength <= 5) return 0.38;
+                if (inputLength <= 10) return 0.28;
+                return 0.22;
+            }
+
+            findBestMatch(input, patterns, threshold) {
+                const inp = this.preprocess(input);
+                const inputWords = inp.split(/\s+/).filter(w => w.length > 0);
+                const dynThreshold = threshold || this.getDynamicThreshold(inputWords.length);
+                if (inputWords.length === 0) return null;
+                const inputEmb = this.getEmbedding(inp);
+                let best = null, bestScore = 0;
+                for (const [pattern, data] of Object.entries(patterns)) {
+                    if (!data._embedding) data._embedding = this.getEmbedding(pattern);
+                    const sim = this.cosineSimilarity(inputEmb, data._embedding);
+                    if (sim > bestScore && sim > dynThreshold) {
+                        bestScore = sim;
+                        best = data;
+                    }
+                }
+                return best ? { data: best, score: bestScore } : null;
+            }
+
+            findPattern(input) {
+                if (!this.enabled || Object.keys(this.data.patterns).length === 0) return null;
+                const match = this.findBestMatch(input, this.data.patterns);
+                if (!match) return null;
+                const { data } = match;
+                if (data.responses.length === 1) return data.responses[0];
+                const weights = data.responses.map((resp, idx) => {
+                    let w = 1;
+                    if (data.respFreq?.[resp]) w += Math.log(data.respFreq[resp] + 1);
+                    if (data.respLastUsed?.[resp]) {
+                        const hoursAgo = (Date.now() - data.respLastUsed[resp]) / (1000 * 60 * 60);
+                        if (hoursAgo < 1) w += 0.5;
+                    }
+                    return w;
+                });
+                const totalWeight = weights.reduce((a, b) => a + b, 0);
+                let rand = Math.random() * totalWeight;
+                for (let i = 0; i < data.responses.length; i++) {
+                    rand -= weights[i];
+                    if (rand <= 0) return data.responses[i];
+                }
+                return data.responses[data.responses.length - 1];
+            }
+
+            learn(input, resp) {
+                if (!this.enabled) return;
+                const inp = this.preprocess(input);
+                const inputWords = inp.split(/\s+/).filter(w => w.length > 0);
+                if (inputWords.length === 0) return;
+                const match = this.findBestMatch(input, this.data.patterns, this.getLearnThreshold(inputWords.length));
+                if (match && match.score > this.getLearnThreshold(inputWords.length)) {
+                    const existingKey = this._findKeyByData(match.data);
+                    if (existingKey) {
+                        const existing = this.data.patterns[existingKey];
+                        if (!existing.responses.includes(resp)) existing.responses.push(resp);
+                        if (!existing.respFreq) existing.respFreq = {};
+                        existing.respFreq[resp] = (existing.respFreq[resp] || 0) + 1;
+                        existing.respLastUsed = existing.respLastUsed || {};
+                        existing.respLastUsed[resp] = Date.now();
+                        existing.freq = (existing.freq || 0) + 1;
+                        existing.lastUsed = Date.now();
+                    }
+                } else {
+                    this.data.patterns[inp] = {
+                        responses: [resp],
+                        respFreq: { [resp]: 1 },
+                        respLastUsed: { [resp]: Date.now() },
+                        freq: 1,
+                        lastUsed: Date.now(),
+                        _embedding: this.getEmbedding(inp)
+                    };
+                }
+                this.data.convPatterns.push({
+                    input: inp,
+                    response: resp,
+                    time: Date.now(),
+                    embedding: this.getEmbedding(inp)
+                });
+                if (this.data.convPatterns.length > 200) {
+                    this.data.convPatterns.splice(0, this.data.convPatterns.length - 200);
+                }
+                this.save();
+            }
+
+            _findKeyByData(dataObj) {
+                for (const [key, val] of Object.entries(this.data.patterns)) {
+                    if (val === dataObj) return key;
+                }
+                return null;
+            }
+
+            generateResponse(input) {
+                const inp = this.preprocess(input);
+                const inputWords = inp.split(/\s+/).filter(w => w.length > 0);
+                if (inputWords.length === 0) return 'لطفاً یک پیام وارد کنید.';
+                const learned = this.findPattern(input);
+                if (learned) return learned;
+                for (const d of this.defaults) {
+                    let bestDefaultScore = 0, matchedDefault = null;
+                    const queries = Array.isArray(d.q) ? d.q : [d.q];
+                    const threshold = this.getDynamicThreshold(inputWords.length) * 0.9;
+                    for (const query of queries) {
+                        const sim = this.similarity(inp, this.preprocess(query));
+                        if (sim > bestDefaultScore) {
+                            bestDefaultScore = sim;
+                            if (sim > threshold) matchedDefault = d.a;
+                        }
+                    }
+                    if (matchedDefault) return typeof matchedDefault === 'function' ? matchedDefault() : matchedDefault;
+                }
+                const ctx = this.contextResponse(input);
+                if (ctx) return ctx;
+                const partial = this.partialMatchResponse(inp, inputWords);
+                if (partial) return partial;
+                const recent = this.data.convPatterns.slice(-3);
+                if (recent.length > 0) {
+                    const lastUserMsg = [...this.convs].reverse().find(m => m.sender === 'user');
+                    if (lastUserMsg) {
+                        const confusionWords = ['نمی‌فهمم', 'چی', 'منظورت', 'توضیح', 'مشکل'];
+                        if (confusionWords.some(w => lastUserMsg.text.includes(w))) {
+                            return 'ببخشید، متوجه نشدم. لطفاً سوال خود را به شکل دیگری بپرسید.';
+                        }
+                    }
+                }
+
+                const fallbacks = [
+  // خیلی کوتاه (3 تا)
+  "اوکی، ادامه بده.",
+  "جالبه—بعدش؟",
+  "بیشتر بگو.",
+
+  // کوتاه (10 تا)
+  "متوجه شدم. دقیق‌ترش می‌گی؟",
+  "اینا رو بیشتر باز کن.",
+  "منظورت همینه؟",
+  "ادامه بده، تو مسیر خوبی هستی.",
+  "پس نتیجه چی میشه؟",
+  "همین! بیشتر بگو.",
+  "این بخشش خیلی مهمه—چرا؟",
+  "کمی مثال می‌زنی؟",
+  "باشه، بریم جلو.",
+  "آها! پس موضوع اینه.",
+
+  // متوسط (5 تا)
+  "حرفت منطقیه—می‌خوای از کجا شروع کنیم؟",
+  "درک می‌کنم. اگر موافقی، مرحله‌به‌مرحله توضیح بده.",
+  "به نظرم یک نکته کلیدی این وسط هست. کدومه؟",
+  "این که گفتی مشخص می‌کنه دنبال چه چیزی هستی. دقیق‌تر کن.",
+  "پس داری می‌گی که… درسته؟ اگر بله، چرا اینطور فکر می‌کنی؟",
+
+  // خیلی بلند (15 تا)
+  "کاملاً گرفتم—این چیزی که گفتی بیشتر شبیه یک مسیر توضیحیه تا صرفاً یک جمله. اگر دوست داری، موضوع رو به چند بخش تقسیم کنیم: اول اینکه دقیقاً چی می‌خوای، بعد چه چیزی باعث شده بهش برسی، و در آخر هم نتیجه یا هدفی که دنبال می‌کنی.",
+  "می‌فهمم چی می‌گی. بیا بحث رو کمی جهت بدیم: به نظرت مهم‌ترین بخشش کدومه؟ اون قسمت رو باز کن تا بقیه از روی همون روشن بشن.",
+  "می‌دونم داری دنبال یک پاسخِ کاربردی هستی. پس بیایم دقیق‌تر پیش بریم: بگو اطلاعاتی که داری چیه، چه چیزی رو کم داری، و دوست داری خروجی نهایی چه شکلی باشه.",
+  "این حرفت نشان می‌ده موضوع رو جدی دیدی. برای اینکه بهتر کمک کنم، لطفاً یک مثال کوتاه بزن یا بگو چه چیزی باعث شد این برداشت رو داشته باشی.",
+  "ایده‌ات جالبه. اگر موافقی، یک بار مسیر رو از اول مرور کنیم: مسئله دقیقاً چیه، نشونه‌ها یا شواهدش کدومه، و نهایتاً چه انتظاری داری؟",
+  "درک می‌کنم. یک پیشنهاد: همین الان یک پاراگراف کوتاه از برداشت خودت بنویس؛ بعد من بر اساس همون، جمع‌بندیِ درست و جوابِ دقیق‌تر می‌دم.",
+  "به نظر میاد داری بین چند گزینه جابه‌جا می‌شی. بیایم روشن کنیم: گزینه‌ها چی‌ها هستن و هر کدوم چه مزایا/چالش‌هایی دارن؟",
+  "این صحبتت مثل اینه که یک مسئله پشتش پنهونه. اگر بگی اون مسئله چیه، من می‌تونم راه گفت‌وگو رو عوض کنم و دقیق‌تر به نتیجه برسیم.",
+  "حرفت هم منطقیه هم جهت داره. برای اینکه مکالمه سریع‌تر جلو بره، فقط بگو هدفت چیه: توضیح، قانع‌کردن، تصمیم‌گیری، یا برنامه‌ریزی؟",
+  "می‌فهمم. اگر اجازه بدی، یک چارچوب ساده می‌چینم: «تعریف»، «دلیل»، «نمونه»، «جمع‌بندی». تو فقط با همون قالب جلو بیا، من بقیه رو پوشش می‌دم.",
+  "آره، کاملاً. اینجا به احتمال زیاد داریم درباره یک مفهوم یا قاعده حرف می‌زنیم. لطفاً بگو برداشتت ازش چیه تا دقیقاً همون رو ادامه بدیم.",
+  "این نکته‌ای که گفتی ارزش داره بیشتر روش مکث کنیم. یک سوال: چطور به این نتیجه رسیدی؟ قدم‌هاش چی بودن؟",
+  "متوجه شدم. بیا یک چک‌پوینت بگذاریم: الان دقیقاً دنبال چه جواب مشخصی هستی؟ (مثلاً «چرا؟»، «چطور؟»، «چه گزینه‌هایی؟»، «چه نتیجه‌ای؟»)",
+  "خوبه—تو داری درست چیزی رو هدف می‌گیری. برای اینکه دقیق کمک کنم، بگو چه محدودیتی داری (زمان/هزینه/سختی) و چه چیزی رو نمی‌خوای.",
+  "می‌تونم ببینم دنبال یک نگاه «عمیق ولی جمع‌وجور» هستی. پس اجازه بده این رو مرحله‌ای پیش ببریم: اول اختلاف یا ابهام، بعد دلیلش، بعد راه‌حل یا جمع‌بندی.",
+
+  // خیلی طولانی (20 تا)
+  "کاملاً حس می‌کنم داری یه موضوع رو از زاویه خاص می‌بینی و دنبال تأیید یا کامل‌کردنش هستی. برای اینکه دقیقاً همون چیزی که می‌خوای بهت بدم، فقط دو چیز رو بگو: ۱) جمله اصلی‌ای که می‌خوای ثابت کنی چیه؟ ۲) چه شاهد یا تجربه‌ای پشتش هست؟ بعدش من با همین دو پایه، یک پاسخ منسجم و کاربردی می‌نویسم و اگر لازم باشه، مسیر بحث رو طوری عوض می‌کنم که سریع‌تر به نتیجه برسیم.",
+  "این توضیح تو به من نشون داد موضوع دقیقاً «یک چیز مبهم» نیست، بلکه یک سؤال مشخصه که فقط شکلش رو بهتر نکرده. پس بیاید همینجا شکلش بدیم: تو می‌خوای بفهمی «چرا»، «چطور»، یا «کدوم گزینه بهتره»؟ وقتی یکی رو انتخاب کنیم، بقیه بحث مثل خط‌کشی می‌شه و جواب هم دقیقاً همون می‌افته.",
+  "جالبه—و اینجا جاییه که مکالمه نباید نصفه بمونه. اگر موافقی، من یک چارچوب می‌دم و تو فقط پرش می‌کنی: مفهوم/هدف چیه؟ مسئله از کجا شروع می‌شه؟ چه موانعی هست؟ و در نهایت معیار موفقیتت چیه؟ با همین، می‌تونیم یک پاسخ خیلی تمیز بسازیم و بحث رو از حالت «سلیقه‌ای» به حالت «قابل اجرا» برسونیم.",
+  "می‌فهمم—حرفت انگار داره به یک مدل ذهنی اشاره می‌کنه. بی‌زحمت مدل رو شفاف کن: تو فکر می‌کنی ترتیب منطقی موضوع اینه که…؟ اگر این ترتیب رو بگی، من می‌تونم همون رو ادامه بدم و اگر جایی نیاز به اصلاح باشه، خیلی نرم و دقیق نشون می‌دم تا تو هم حس کنی موضوع دستت بوده.",
+  "اوکی، این دقیقاً همون جاییه که باید بحث رو هوشمندانه جهت داد. چون الان فقط یک اشاره داری، اما پاسخ درست معمولاً با «باز کردن زیرموضوع‌ها» میاد. پس اجازه بده من چند سوال کوتاه بپرسم: کدوم قسمت برات مبهمه؟ آیا دنبال نتیجه سریع‌تری هستی یا تحلیل عمیق‌تر؟ و اگر یک مثال واقعی داشته باشی، می‌تونه کل مکالمه رو یک پله جلو ببره.",
+  "کاملاً درست گفتی—ولی بهترش اینه که یک قدم جلوتر بریم. بگو اگر این موضوع حل بشه، چه تغییری ایجاد می‌کنه؟ (در رفتار/تصمیم/برنامه‌ات) بعدش من هم جواب رو به همون خروجی گره می‌زنم تا کاربر حس کنه «پاسخ می‌گیره، نه فقط حرف».",
+  "متوجه شدم. و چون لحن صحبتت جدی و دقیق بوده، من هم از حالت کلی‌گویی خارج می‌شم. فقط یک جمله دیگه بگو: از این بحث چی می‌خوای که در عمل انجام بدی؟ من می‌تونم یک جمع‌بندیِ قابل اجرا بدم یا حتی مسیر بحث رو طوری تغییر بدم که به یک پیشنهاد عملی برسیم.",
+  "این حرفت نشان می‌ده دنبال یک «جمع‌بندی قابل اعتماد» هستی. پس بیایم بحث رو کوتاه اما دقیق کنیم: نکته اصلی چیه؟ دلیلش چیه؟ و نتیجه احتمالی چیه؟ تو جواب این سه تا رو بدی، من هم سریع یک پاسخ کامل می‌سازم که انگار از قبل آماده‌ست.",
+  "آره، کاملاً. اما اجازه بده مکالمه رو هوشمندتر کنیم: آیا بیشتر به جنبه منطقی علاقه داری یا جنبه تجربی/شخصی؟ اگر این رو مشخص کنی، من پاسخ رو با همون سبک می‌دم—همون چیزی که باعث می‌شه حرفت بهتر به نتیجه برسه.",
+  "جالبه—و من فکر می‌کنم اون چیزی که داری می‌گی «یک قانون» داره. اگر بگی قانون رو چطور می‌بینی (مثلاً همیشه/گاهی/بستگی دارد)، من می‌تونم هم محدودیت‌ها رو بگم هم یک نمونه عملی پیشنهاد کنم تا در تصمیم‌گیری به درد بخوره.",
+  "خیلی خوب داری جلو می‌ری. برای اینکه جواب دقیق‌تر بشه، یک تست سریع: اگر کسی دیگه همین حرف رو بزنه، تو دوست داری چه چیزی رو ازش بپرسی؟ همون سؤال تو، بهترین مسیر پاسخ من برای ادامه است.",
+  "می‌فهمم و کاملاً با مسیرت همراه‌ام. ولی برای اینکه مکالمه اتلاف وقت نشه، بیا دقیق کنیم: موضوعی که گفتی رو در یک جمله خلاصه کن. بعدش من هم بر اساس همون جمله، چند گزینه پاسخ می‌دم: یکی تحلیل‌محور، یکی کاربردی، یکی کوتاه و نتیجه‌محور—تا هر کدوم به سلیقه‌ات نزدیک‌تر بود همون رو انتخاب کنیم.",
+  "این توضیح تو واقعاً کمک کرد. الان اگر اجازه بدی، من بحث رو از حالت «تایید کلی» می‌برم به حالت «کمک واقعی»: بگو دنبال تصمیم‌گیری هستی یا درک؟ اگر تصمیم‌گیریه، معیار انتخابت چیه؟ اگر درک می‌خوای، دنبال فهم علت هستی یا فهم روش؟",
+  "اوکی، اینجا یک نکته ریز هست که می‌تونه خیلی تعیین‌کننده باشه. اگر بخوای، به من بگو: چه چیزی رو می‌دونی و چه چیزی رو هنوز نمی‌دونی؟ همون مرز ناآگاهی معمولاً بهترین نقطه شروع پاسخ دقیق است."
+  ];
+                return fallbacks[Math.floor(Math.random() * fallbacks.length)];
+            }
+
+            partialMatchResponse(inp, inputWords) {
+                if (inputWords.length === 0) return null;
+                let bestScore = 0, bestResp = null;
+                for (const [pattern, data] of Object.entries(this.data.patterns)) {
+                    const patternWords = pattern.split(/\s+/).filter(w => w.length > 0);
+                    let matchCount = 0, patternMatchCount = 0;
+                    for (const word of inputWords) {
+                        if (patternWords.some(pw => pw.includes(word) || word.includes(pw))) matchCount++;
+                    }
+                    for (const pw of patternWords) {
+                        if (inputWords.some(w => w.includes(pw) || pw.includes(w))) patternMatchCount++;
+                    }
+                    const maxLen = Math.max(inputWords.length, patternWords.length);
+                    const score = maxLen > 0 ? (matchCount + patternMatchCount) / (2 * maxLen) : 0;
+                    if (score > bestScore && score > 0.4) {
+                        bestScore = score;
+                        let bestFreq = 0;
+                        for (const resp of data.responses) {
+                            const freq = data.respFreq?.[resp] || 1;
+                            if (freq > bestFreq) { bestFreq = freq; bestResp = resp; }
+                        }
+                    }
+                }
+                return bestResp;
+            }
+
+            contextResponse(input) {
+                const recent = this.data.convPatterns.slice(-5);
+                if (!recent.length) return null;
+                const inputEmb = this.getEmbedding(input);
+                let bestContextResponse = null, maxContextSim = 0;
+                for (const c of recent) {
+                    const cEmb = c.embedding || this.getEmbedding(c.input);
+                    const sim = this.cosineSimilarity(inputEmb, cEmb);
+                    const words = this.preprocess(input).split(/\s+/).filter(w => w.length > 0);
+                    const ctxThreshold = this.getDynamicThreshold(words.length) * 0.7;
+                    if (sim > maxContextSim && sim > ctxThreshold) {
+                        maxContextSim = sim;
+                        const relatedPatterns = Object.entries(this.data.patterns).filter(([pat]) => {
+                            const patEmb = this.data.patterns[pat]._embedding || this.getEmbedding(pat);
+                            const simToInput = this.cosineSimilarity(inputEmb, patEmb);
+                            const simToContext = this.cosineSimilarity(cEmb, patEmb);
+                            return simToInput > 0.25 || simToContext > 0.3;
+                        });
+
+                        if (relatedPatterns.length) {
+                            let bestRel = null, bestRelScore = 0;
+                            for (const [pat, data] of relatedPatterns) {
+                                const patEmb = data._embedding || this.getEmbedding(pat);
+                                const score = this.cosineSimilarity(inputEmb, patEmb);
+                                if (score > bestRelScore) { bestRelScore = score; bestRel = data; }
+                            }
+                            if (bestRel?.responses.length) {
+                                bestContextResponse = bestRel.responses[Math.floor(Math.random() * bestRel.responses.length)];
+                            }
+                        } else {
+                            bestContextResponse = c.response;
+                        }
+                    }
+                }
+                return bestContextResponse;
+            }
+
+            addMessage(sender, text, time) {
+                const msg = { sender, text, time: time || new Date().toLocaleTimeString('fa-IR') };
+                this.convs.push(msg);
+                LS.set('chatbot_convs', this.convs);
+                this.updateStats();
+                return msg;
+            }
+
+            loadChats() {
+                const c = $('chatContainer');
+                c.innerHTML = '';
+                this.convs.forEach(m => {
+                    const div = document.createElement('div');
+                    div.className = `message ${m.sender}`;
+                    div.innerHTML = `<div class="bubble">${m.text}<div class="time">${m.time} | <a href="#">UP ⇪</a></div></div>`;
+                    c.appendChild(div);
+                });
+                c.scrollTop = c.scrollHeight;
+            }
+
+            save() {
+                const patternsToSave = {};
+                for (const [key, val] of Object.entries(this.data.patterns)) {
+                    const { _embedding, ...rest } = val;
+                    patternsToSave[key] = rest;
+                }
+                const convToSave = this.data.convPatterns.map(cp => {
+                    const { embedding, ...rest } = cp;
+                    return rest;
+                });
+                LS.set('chatbot_data', { patterns: patternsToSave, convPatterns: convToSave });
+                this.updateStats();
+            }
+
+            updateStats() {
+                const el = id => document.getElementById(id);
+                if (el('totalConv')) el('totalConv').textContent = this.convs.length;
+                if (el('patterns')) el('patterns').textContent = Object.keys(this.data.patterns).length;
+                if (el('accuracy')) el('accuracy').textContent = this.calcAccuracy() + '%';
+                if (el('toggleLearnBtn')) el('toggleLearnBtn').innerHTML = this.enabled ? '✅ یادگیری فعال' : '❌ یادگیری غیرفعال';
+                LS.set('chatbot_enabled', this.enabled);
+            }
+
+            calcAccuracy() {
+                if (this.data.convPatterns.length < 5) return 0;
+                const recent = this.data.convPatterns.slice(-20);
+                let ok = 0;
+                recent.forEach(p => {
+                    const resp = this.findPattern(p.input);
+                    if (resp && this.similarity(resp, p.response) > 0.5) ok++;
+                });
+                return Math.round(ok / recent.length * 100);
+            }
+
+            clearLearning() {
+                this.data = { patterns: {}, convPatterns: [] };
+                LS.set('chatbot_data', this.data);
+                this.updateStats();
+                alert('داده‌های یادگیری پاک شد.');
+            }
+
+            clearMessages() {
+                this.convs = [];
+                LS.set('chatbot_convs', this.convs);
+                this.loadChats();
+                this.updateStats();
+            }
+
+            toggleLearn() {
+                this.enabled = !this.enabled;
+                LS.set('chatbot_enabled', this.enabled);
+                this.updateStats();
+                alert(`یادگیری ${this.enabled ? 'فعال' : 'غیرفعال'} شد.`);
+            }
+        }
+
+        const bot = new ChatBot();
+
+        $('sendBtn').onclick = () => send();
+        $('userInput').onkeydown = e => { if (e.key === 'Enter') send(); };
+        $('clearLearnBtn').onclick = () => { if (confirm('پاک شود؟')) bot.clearLearning(); };
+        $('clearMessagesBtn').onclick = () => { if (confirm('پیام‌ها پاک شوند؟')) bot.clearMessages(); };
+        $('toggleLearnBtn').onclick = () => bot.toggleLearn();
+
+        async function send() {
+            const inp = $('userInput');
+            const text = inp.value.trim();
+            if (!text) return;
+            inp.value = '';
+            bot.addMessage('user', text);
+            bot.loadChats();
+            showThinking();
+            const resp = bot.generateResponse(text);
+            bot.learn(text, resp);
+            await typeResponse(resp);
+        }
+
+        function showThinking() {
+            const c = $('chatContainer');
+            const d = document.createElement('div');
+            d.className = 'message bot';
+            d.id = 'thinkingMsg';
+            d.innerHTML = '<div class="bubble thinking">🧠 فکر کردن <span class="typing-cursor"></span></div>';
+            c.appendChild(d);
+            c.scrollTop = c.scrollHeight;
+        }
+
+        async function typeResponse(fullText) {
+            const thinking = $('thinkingMsg');
+            if (thinking) thinking.remove();
+            const c = $('chatContainer');
+            const d = document.createElement('div');
+            d.className = 'message bot';
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+            d.appendChild(bubble);
+            c.appendChild(d);
+            const words = fullText.split(' ');
+            let idx = 0, shown = '';
+            const cursorSpan = document.createElement('span');
+            cursorSpan.className = 'typing-cursor';
+            bubble.appendChild(cursorSpan);
+            await new Promise(resolve => {
+                const interval = setInterval(() => {
+                    if (idx < words.length) {
+                        shown += (idx ? ' ' : '') + words[idx];
+                        idx++;
+                        bubble.innerHTML = shown;
+                        bubble.appendChild(cursorSpan);
+                        c.scrollTop = c.scrollHeight;
+                    } else {
+                        clearInterval(interval);
+                        cursorSpan.remove();
+                        const timeDiv = document.createElement('div');
+                        timeDiv.className = 'time';
+                        timeDiv.textContent = new Date().toLocaleTimeString('fa-IR');
+                        bubble.appendChild(timeDiv);
+                        bot.addMessage('bot', fullText, timeDiv.textContent);
+                        resolve();
+                    }
+                }, 120);
+            });
+        }
+
+        bot.loadChats();
+        if (!bot.convs.length) {
+            setTimeout(() => {
+                bot.addMessage('bot', 'سلام! من یک چت‌بات هوشمند هستم. میتونم از شما یاد بگیرم و پیشرفته‌تر شوم. هر سوالی دارید بپرسید.');
+                bot.loadChats();
+            }, 300);
+        }
+    </script>
+</body>
+
+</html>
